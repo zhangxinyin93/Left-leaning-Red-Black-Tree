@@ -1,24 +1,23 @@
-/**Implementation of Left-leaning Red-Black Tree(LLRB)
+import java.util.ArrayList;
+import java.util.LinkedList;
+
+/**Implementation of Red-Black tree based on Left-leaning Red-Black Tree(LLRB)
  * @param <Key>
  * @param <Value>
  */
 public class RBTree{
-	private int amount=0;
+	private int amount;//use for calculate the amount of count in inRnange method
+	
+	/****************************************************************************
+	 *Private class RBNode
+	 *Only use in RBTree class
+	 ****************************************************************************/
 	private class RBNode{
 		int id;
 		int count;
 		RBNode left;
 		RBNode right;
 		boolean isRed;//red=true,black=false;
-		
-		/**RBNode(){
-			id=null;
-			count=null;
-			//parent=null;
-			left=null;
-			right=null;
-			isRed=true;
-		}**/
 		
 		RBNode(int key, int val){
 			this.id=key;
@@ -32,10 +31,10 @@ public class RBTree{
 	
 	private RBNode root;//new a root for red-black tree
 	
-	/******************************************************
+	/****************************************************************************
 	 * Basic operation for red-black tree when do insertion
 	 * left rotate,right rotate,color flip
-	 *******************************************************/
+	 ****************************************************************************/
 	private RBNode LeftRotate(RBNode n){
 		RBNode tmp=n.right;
 		n.right=tmp.left;
@@ -61,14 +60,18 @@ public class RBTree{
 	}
 	
 	private boolean red(RBNode n){
-		if(n==null) return false;
+		if(n==null) return false;//external node will be colored as black
 		return n.isRed;
 	}
 	
-	/******************************************************
+	/****************************************************************************
 	 * Basic operation for red-black tree when do deletion
-	 * moveRedLeft(),moveRedRight(),minNode() & fix()
-	 *******************************************************/
+	 * moveRedLeft(),moveRedRight(),minNode(),maxNode(),fix()
+	 ****************************************************************************/
+	//push the red node on the left route
+	//LLRB->won't have red on right then check only need to check if there is any red node in the left part of right subtree
+	//try to move all red to left
+	//actually this is the way to combine
 	private RBNode moveRedLeft(RBNode n){
 		ColorFlip(n);//push red down
 		if(red(n.right.left)){
@@ -178,7 +181,7 @@ public class RBTree{
 			if(id==n.id && n.right==null) return null;
 			if(!red(n.right) && !red(n.right.left)) 
 				n=moveRedRight(n);
-			//delete a interval node
+			//delete a internal node, by exchanging internal node with the minNode in right subtree->delete at the bottom
 			if(id==n.id){
 				RBNode tmp=minNode(n.right);
 				n.id=tmp.id;
@@ -232,12 +235,15 @@ public class RBTree{
 //	}
 	
 	private RBNode getBiggerParent(RBNode n,int id){
-		if(id==n.left.id) return n;
-		else if(id==n.right.id) return getBiggerParent(root,n.id);
-		else{
-			if(id>n.id) return getBiggerParent(n.right,id);
-			else return getBiggerParent(n.left,id);
+		if(n.left!=null || n.right!=null){
+			if(id==n.left.id) return n;
+			else if(id==n.right.id) return getBiggerParent(root,n.id);
+			else{
+				if(id>n.id) return getBiggerParent(n.right,id);
+				else return getBiggerParent(n.left,id);
+			}
 		}
+		return null;
 	}
 	
 	private RBNode getNext(RBNode n,int id){
@@ -248,12 +254,15 @@ public class RBTree{
 	}
 	
 	private RBNode getSmallerParent(RBNode n,int id){
-		if(id==n.left.id) return getSmallerParent(root,n.id);
-		else if(id==n.right.id) return n;
-		else{
-			if(id>n.id) return getSmallerParent(n.right,id);
-			else return getSmallerParent(n.left,id);
+		if(n.left!=null || n.right!=null){
+			if(id==n.left.id) return getSmallerParent(root,n.id);
+			else if(id==n.right.id) return n;
+			else{
+				if(id>n.id) return getSmallerParent(n.right,id);
+				else return getSmallerParent(n.left,id);
+			}
 		}
+		return null;
 	}
 	
 	private RBNode getPrevious(RBNode n,int id){
@@ -271,11 +280,11 @@ public class RBTree{
 		if(containsKey(id)){
 			RBNode n=getNode(id);
 			n.count=n.count+addon;
-			System.out.println("new count is "+n.count);
+			System.out.println(n.count);
 		}
 		else{
 			add(id,addon);
-			System.out.println("Insert successfully");
+			System.out.println(getNode(id).count);
 		}
 	}
 	
@@ -288,7 +297,7 @@ public class RBTree{
 				delete(id);
 				System.out.println("0");
 			}
-			else System.out.println("new count is "+n.count);
+			else System.out.println(n.count);
 		}
 		else System.out.println("0");
 	}
@@ -296,31 +305,62 @@ public class RBTree{
 	//Function for Count
 	public void count(int id){
 		if(containsKey(id)){
-			System.out.println("Count is "+getNode(id).count);
+			System.out.println(getNode(id).count);
 		}
 		else System.out.println("0");
 	}
 	
 	//Function for InRange
 	public void inRange(int id1,int id2){
-		RBNode subroot=inRange(root,id1,id2);
-		printRange(subroot,id1,id2);
-		System.out.print(amount);
+		amount=0;
+		if(containsKey(id1) && containsKey(id2)){
+			RBNode subroot=inRange(root,id1,id2);
+			printRange(subroot,id1,id2);
+			System.out.println(amount);
+		}
+		else if(containsKey(id1) && !containsKey(id2)){
+			RBNode end=getPrevious(root,id2);
+			RBNode subroot=inRange(root,id1,end.id);
+			printRange(subroot,id1,end.id);
+			System.out.println(amount);
+		}
+		else if(!containsKey(id1) && containsKey(id2)){
+			RBNode start=getNext(root,id1);
+			RBNode subroot=inRange(root,start.id,id2);
+			printRange(subroot,start.id,id2);
+			System.out.println(amount);
+		}
+		else{
+			RBNode start=getNext(root,id1);
+			RBNode end=getPrevious(root,id2);
+			RBNode subroot=inRange(root,start.id,end.id);
+			printRange(subroot,start.id,end.id);
+			System.out.println(amount);
+		}
 	}
 	
 	private RBNode inRange(RBNode n,int id1,int id2){
+		if(n==null) return null;
+		//System.out.println("visit"+n.id+" "+n.left.id);
 		if(id1<n.id && id2<n.id) return inRange(n.left,id1,id2);
-		else if(id1>n.id && id2>n.id) return inRange(n.right,id1,id2);
-		else return n;
+		if(id1>n.id && id2>n.id) return inRange(n.right,id1,id2);
+		return n;
 	}
 	
 	private void printRange(RBNode n,int id1,int id2){
 		if(n==null) return;
-		else if(n.id<id1 || n.id>id2) return;
-		printRange(n.left,id1,id2);
-		RBNode tmp=getNode(n.id);
-		amount+=tmp.count;
-		printRange(n.right,id1,id2);
+		else if((n.id<id1 && n.right==null) || (n.id>id2 && n.left==null)) return;
+		//System.out.print(n.left.id);
+//		else if(n.id<id1 && n.right!=null) printRange(n.right,id1,id2);
+//		else if(n.id>id2 && n.left!=null) printRange(n.left,id1,id2);
+		if(n.left!=null) printRange(n.left,id1,id2);
+		if(n.id>=id1 && n.id<=id2){
+			RBNode tmp=getNode(n.id);
+			amount=amount+tmp.count;
+			//System.out.println(tmp.id+" "+tmp.count+" "+amount);
+			//System.out.print(tmp.id+" ");
+		}
+		if(n.right!=null) printRange(n.right,id1,id2);
 	}
 	
 	//Function for Next
@@ -370,14 +410,63 @@ public class RBTree{
 	 *********************************************************/
 	//print out the current red-black tree
 	public void print(){
-		System.out.println("root is "+root.id);
+		//System.out.println("root is "+root.id);
 		print(root);
 	}
 	
-	private void print(RBNode n){//in-order traversal
+	private void print(RBNode n){//level-order traversal
+		LinkedList<RBNode> queue = new LinkedList<RBNode>();
+		ArrayList<RBNode> curr = new ArrayList<RBNode>();
+		boolean flag=true;
+		queue.add(n);
+		while(queue.isEmpty()==false){
+			if(!flag){
+				curr = new ArrayList<RBNode>();
+				flag=true;
+			}
+			while(queue.isEmpty()==false){
+				RBNode tmp=queue.remove();
+				curr.add(tmp);
+			}
+			for(int i=0;i<curr.size();i++){
+				RBNode node = curr.get(i);
+				if(node.left!=null){
+					flag=false;
+					queue.add(node.left);
+				}
+				if(node.right!=null){
+					flag=false;
+					queue.add(node.right);
+				}
+			}
+		}
+		for(int j=0;j<curr.size();j++){
+			curr.get(j).isRed=true;
+		}
+	}
+	
+	public void initialization(int[] ids,int[] counts,int start,int end){
+		root=initialize(ids,counts,start,end);
+	}
+	
+	private RBNode initialize(int[] ids,int[] counts,int start,int end){
+		if(start==end) return null;
+		int mid=(start+end)/2;
+		RBNode n = new RBNode(ids[mid],counts[mid]);
+		n.isRed=false;
+		n.left=initialize(ids,counts,start,mid);
+		n.right=initialize(ids,counts,mid+1,end);
+		return n;
+	}
+	
+	public void check(){
+		check(root);
+	}
+	
+	private void check(RBNode n){
 		if(n==null) return;
-		print(n.left);
-		System.out.println("id="+n.id+" "+"red="+n.isRed+" "+"count="+n.count);
-		print(n.right);
+		check(n.left);
+		System.out.print(n.id+" ");
+		check(n.right);
 	}
 }
